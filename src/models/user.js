@@ -10,6 +10,7 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
+        unique: [true,'Email is unique, already registered'],
         required: [true, "Email is required"],
         trim: true,// space remove korar jonno use kora hoi
         lowercase: true,
@@ -43,6 +44,23 @@ const userSchema = new mongoose.Schema({
     }
 })
 
+userSchema.statics.findByCredentials = async(email, password) =>{
+    const user = await User.findOne({email})
+
+    if (!user) {
+        throw new Error('Unable to login');
+    }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {         
+        throw new Error('Unable to login, password mismatch')
+    }
+    console.log(user);
+    return user;
+}
+
+//Hash the plain text password before saving it to the database
 userSchema.pre('save', async function (next) {
     const user = this;
 
