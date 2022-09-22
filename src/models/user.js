@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -10,7 +11,7 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
-        unique: [true,'Email is unique, already registered'],
+        unique: [true, 'Email is unique, already registered'],
         required: [true, "Email is required"],
         trim: true,// space remove korar jonno use kora hoi
         lowercase: true,
@@ -35,17 +36,34 @@ const userSchema = new mongoose.Schema({
         required: [true, "Password is required"],
         trim: true,
         minLength: [7, 'Password must be 7 or more digits'],
-        maxLength: [20, 'Password too long...must be 20 or less characters'],
+        // maxLength: [20, 'Password too long...must be 20 or less characters'],
         validate(value) {
             if (!validator.isStrongPassword(value)) {
                 throw new Error('Password must have 8 characters, 1 lowercase, 1 uppercase,1 number, 1 special symbol');
             }
         }
-    }
+    },
+    tokens: [{
+        token: {
+            type: String,
+            required: true,
+        }
+    }]
 })
 
-userSchema.statics.findByCredentials = async(email, password) =>{
-    const user = await User.findOne({email})
+//jwt token
+userSchema.methods.generateAuthToken = async function () {
+    const user = this;
+    const token = jwt.sign({ _id: user._id.toString() }, 'thisismynewcourse')
+
+    user.tokens = user.tokens.concat({ token });
+    await user.save();
+
+    return token;
+}
+
+userSchema.statics.findByCredentials = async (email, password) => {
+    const user = await User.findOne({ email })
 
     if (!user) {
         throw new Error('Unable to login');
@@ -53,10 +71,9 @@ userSchema.statics.findByCredentials = async(email, password) =>{
 
     const isMatch = await bcrypt.compare(password, user.password);
 
-    if (!isMatch) {         
+    if (!isMatch) {
         throw new Error('Unable to login, password mismatch')
     }
-    console.log(user);
     return user;
 }
 

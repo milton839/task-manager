@@ -9,7 +9,8 @@ router.post("/users", async (req, res) => {
 
     try {
         await user.save();
-        res.status(200).send(user)
+        const token = await user.generateAuthToken();
+        res.status(201).send({ user, token })
     } catch (error) {
         res.status(400).send(error)
     }
@@ -21,13 +22,12 @@ router.post("/users", async (req, res) => {
     // })
 })
 
-router.post('/users/login', async (req, res)=>{
-    console.log(req.body.email, req.body.password);
-    try{
+router.post('/users/login', async (req, res) => {
+    try {
         const user = await User.findByCredentials(req.body.email, req.body.password);
-        console.log(user);
-        res.send(user);
-    }catch(error){
+        const token = await user.generateAuthToken();
+        res.status(200).send({ user, token });
+    } catch (error) {
         res.status(400).send(error)
     }
 })
@@ -94,7 +94,7 @@ router.patch('/users/:id', async (req, res) => {
 
         updates.forEach(update => {
             console.log(update);
-            updateUser[update] =req.body[update];
+            updateUser[update] = req.body[update];
         })
 
         await updateUser.save();
