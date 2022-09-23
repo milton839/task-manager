@@ -1,6 +1,7 @@
 const express = require('express');
 const router = new express();
 const User = require('../models/user');
+const auth = require('../middleware/auth');
 
 
 // User create Api
@@ -32,21 +33,31 @@ router.post('/users/login', async (req, res) => {
     }
 })
 
-// users get
-router.get('/users', async (req, res) => {
-    try {
-        const users = await User.find({})
-        res.status(200).send(users)
-    } catch (error) {
+router.post('/users/logout', auth, async (req, res)=>{
+    try{
+        req.user.token = req.user.tokens.filter((token)=>{
+            return token.token !== req.token;
+        })
+        await req.user.save();
+        res.send()
+    }catch(error){
         res.status(500).send(error)
     }
+})
 
+router.post('/users/logoutAll', auth, async (req, res)=>{
+    try{
+        req.user.tokens = [];
+        await req.user.save();
+        res.send()
+    }catch(error){
+        res.status(500).send(error)
+    }
+})
 
-    // users.then((users) => {
-    //     res.send(users)
-    // }).catch((error) => {
-    //     res.status(500).send(error)
-    // })
+// users get
+router.get('/users/me', auth, async (req, res) => {
+    res.send(req.user)
 })
 
 
