@@ -62,6 +62,7 @@ userSchema.methods.generateAuthToken = async function () {
     return token;
 }
 
+// Login System
 userSchema.statics.findByCredentials = async (email, password) => {
     const user = await User.findOne({ email })
 
